@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { Prisma } from "@prisma/client";
+import { z } from "zod";
 import { enquirySchema, messageSchema, leadUpdateSchema, visitRequestSchema, visitActionSchema } from "@pbs/validation";
 import { ENQUIRABLE } from "@pbs/domain";
 import type { AppContext } from "../context";
@@ -226,6 +227,13 @@ export async function enquiryRoutes(app: FastifyInstance, ctx: AppContext) {
     const items = await db.notification.findMany({ where: { userId: u.id }, orderBy: { createdAt: "desc" }, take: 50 });
     return { items, unread: items.filter((n) => !n.readAt).length };
   });
+  app.post("/v1/me/push-tokens", async (req) => {
+    const u = requireUser(req);
+    const b = z.object({ token: z.string().min(10).max(200), platform: z.enum(["ios", "android"]) }).parse(req.body);
+    await db.pushToken.upsert({ where: { token: b.token }, create: { userId: u.id, token: b.token, platform: b.platform }, update: { userId: u.id, platform: b.platform } });
+    return { registered: true };
+  });
+
   app.post("/v1/me/notifications/read", async (req) => {
     const u = requireUser(req);
     await db.notification.updateMany({ where: { userId: u.id, readAt: null }, data: { readAt: new Date() } });

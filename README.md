@@ -3,7 +3,7 @@
 **RENT | BUY | SELL · LAND • HOMES • PROPERTIES**
 India's Smart Property Marketplace. A Product of AAROVIN SOFTWARE SOLUTIONS.
 
-Monorepo with a Fastify API, a Next.js website (public site, dashboards, admin moderation) and, next, an Expo mobile app. See `docs/` for assumptions, architecture, acceptance checklist and status.
+Monorepo with a Fastify API, a Next.js website (public site, dashboards, admin moderation) and an Expo mobile app for Android and iOS (see docs/MOBILE.md). See `docs/` for assumptions, architecture, acceptance checklist and status.
 
 ## Run locally
 
@@ -42,6 +42,7 @@ pnpm --filter @pbs/api test       # API integration tests (needs properbysel_tes
 pnpm typecheck
 pnpm --filter @pbs/web build
 node e2e/flow.e2e.mjs             # browser test of the full first workflow (API + web running, Playwright installed)
+node e2e/mobile.e2e.mjs           # mobile app (exported web build on :8081) shares data with the website
 ```
 
 The integration tests only run against a database whose name ends in `_test`.

@@ -17,5 +17,5 @@ Status key: ✅ tested automatically · 🟡 implemented, not yet tested · ⬜ 
 | 11 | Expired paid placements stop receiving paid treatment | ⬜ | |
 | 12 | Closing a listing updates its visibility and enquiry behaviour | ✅ | flow.test.ts #12 |
 | 13 | Production settings reject development authentication bypasses | ✅ | flow.test.ts auth #13 |
-| 14 | Mobile and web use the same persisted data | ⬜ | |
+| 14 | Mobile and web use the same persisted data | ✅ | e2e/mobile.e2e.mjs (mobile web build at phone size; native builds not yet run) |
 | 15 | Backup restoration is documented and tested where possible | ⬜ | |

@@ -35,7 +35,7 @@ export async function buildApp(opts: BuildOptions): Promise<{ app: FastifyInstan
   };
 
   await app.register(helmet, { crossOriginResourcePolicy: { policy: "cross-origin" } });
-  await app.register(cors, { origin: cfg.WEB_ORIGIN.split(","), credentials: true });
+  await app.register(cors, { origin: cfg.WEB_ORIGIN.split(","), credentials: true, methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"], allowedHeaders: ["content-type", "authorization", "idempotency-key"] });
   await app.register(rateLimit, { max: 300, timeWindow: "1 minute" });
   await app.register(multipart, { limits: { files: 1, fileSize: 10 * 1024 * 1024 } });
 

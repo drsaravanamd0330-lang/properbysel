@@ -23,9 +23,18 @@ Updated 2026-11-26. Key: **Tested** = covered by an automated test that passed Â
 | Draft policy pages | Implemented | Marked "Draft for professional review". |
 | Rate limits | Implemented | Global and per-route; OTP limited per phone. |
 
+## Phase 3: mobile app
+
+| Area | Status | Notes |
+|---|---|---|
+| Expo app: search, details, login, post listing with photos, inbox, chat, visits, favourites, account | Tested | Exported web build driven at phone size against the real API (`e2e/mobile.e2e.mjs`). Android and iOS JS bundles compile. |
+| Native Android/iOS builds, device testing | Blocked | Needs Expo/EAS account; iOS also needs an Apple Developer account. See docs/MOBILE.md. |
+| Push notifications | Implemented (client + token storage) | Sending from the server not built; needs EAS project + FCM/APNs credentials. |
+| Deep links | Implemented | `properbysel://` scheme. Universal links need the production domain. |
+
 ## Not started yet
 
-Mobile app (Phase 3); saved searches and comparison; plans, orders, Razorpay/sandbox payments, entitlements, invoices (Phase 4); admin user/role/report/ticket management and metrics; Tamil/Hindi localisation; email/SMS/push/WhatsApp providers; S3 storage adapter; admin MFA; CI pipeline; deployment runbooks; business launch package.
+saved searches and comparison; plans, orders, Razorpay/sandbox payments, entitlements, invoices (Phase 4); admin user/role/report/ticket management and metrics; Tamil/Hindi localisation; email/SMS/push/WhatsApp providers; S3 storage adapter; admin MFA; CI pipeline; deployment runbooks; business launch package.
 
 ## Known limitations
 

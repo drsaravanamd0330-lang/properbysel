@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "ProperBySel",
+    "slug": "properbysel",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "properbysel",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "com.aarovin.properbysel",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "ProperBySel uses your photo library only so you can add pictures of a property you are listing.",
+        "NSCameraUsageDescription": "ProperBySel uses the camera only if you choose to photograph a property you are listing."
+      }
+    },
+    "android": {
+      "package": "com.aarovin.properbysel",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B2545",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      ["expo-image-picker", { "photosPermission": "ProperBySel uses your photo library only so you can add pictures of a property you are listing." }],
+      "expo-notifications",
+      ["expo-splash-screen", { "backgroundColor": "#0B2545", "image": "./assets/images/splash-icon.png", "imageWidth": 140 }]
+    ],
+    "extra": {
+      "apiUrl": null
+    },
+    "experiments": {
+      "typedRoutes": false,
+      "reactCompiler": true
+    }
+  }
+}

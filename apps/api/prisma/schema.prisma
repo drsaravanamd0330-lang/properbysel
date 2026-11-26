@@ -138,6 +138,7 @@ model User {
   auditLogs       AuditLog[]
   documents       PrivateDocument[]
   verifications   Verification[]     @relation("VerificationSubject")
+  pushTokens      PushToken[]
 }
 
 model UserRole {
@@ -484,4 +485,16 @@ model AuditLog {
   actor      User?    @relation(fields: [actorId], references: [id])
 
   @@index([entityType, entityId, createdAt])
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  platform  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
