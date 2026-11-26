@@ -111,6 +111,7 @@ export function createClient(opts: ClientOptions) {
     me: {
       get: () => req<Me>("GET", "/v1/me"),
       update: (b: { name: string; email?: string }) => req<Me>("PATCH", "/v1/me", b),
+      deleteAccount: () => req<{ deleted: true }>("DELETE", "/v1/me", { confirm: "DELETE" }),
       listings: (status?: string) => req<{ items: OwnerListing[] }>("GET", `/v1/me/listings${qs({ status })}`),
       inbox: () => req<{ items: InboxItem[] }>("GET", "/v1/me/inbox"),
       enquiries: () => req<{ items: { id: string; conversationId: string; createdAt: string; listing: PublicListing; visits: Visit[] }[] }>("GET", "/v1/me/enquiries"),

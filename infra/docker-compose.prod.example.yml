@@ -1,0 +1,17 @@
+# Example single-server deployment (staging or a small pilot). Copy to the server, fill a real .env
+# (never commit it), and put a TLS-terminating reverse proxy (Caddy/Nginx) in front.
+# Prefer a managed PostgreSQL with automated backups and point-in-time recovery over the db service below.
+services:
+  api:
+    build: { context: .., dockerfile: infra/Dockerfile.api }
+    env_file: ../.env
+    environment: { APP_ENV: production }
+    restart: unless-stopped
+    ports: ["127.0.0.1:4000:4000"]
+    healthcheck: { test: ["CMD", "node", "-e", "fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"], interval: 30s, timeout: 5s, retries: 3 }
+  web:
+    build: { context: .., dockerfile: infra/Dockerfile.web, args: { API_INTERNAL_URL: "http://api:4000" } }
+    environment: { API_INTERNAL_URL: "http://api:4000" }
+    restart: unless-stopped
+    depends_on: [api]
+    ports: ["127.0.0.1:3000:3000"]

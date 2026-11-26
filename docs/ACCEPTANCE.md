@@ -18,4 +18,4 @@ Status key: ✅ tested automatically · 🟡 implemented, not yet tested · ⬜ 
 | 12 | Closing a listing updates its visibility and enquiry behaviour | ✅ | flow.test.ts #12 |
 | 13 | Production settings reject development authentication bypasses | ✅ | flow.test.ts auth #13 |
 | 14 | Mobile and web use the same persisted data | ✅ | e2e/mobile.e2e.mjs (mobile web build at phone size; native builds not yet run) |
-| 15 | Backup restoration is documented and tested where possible | ⬜ | |
+| 15 | Backup restoration is documented and tested where possible | ✅ | `infra/scripts/verify-restore.sh` drill passed on the local database (33 tables, identical row counts); procedure in docs/RUNBOOKS.md. Not yet run on a managed database. |

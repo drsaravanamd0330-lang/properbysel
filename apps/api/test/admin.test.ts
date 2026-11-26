@@ -109,3 +109,21 @@ describe("saved searches and compare", () => {
     expect(JSON.stringify(r.json())).not.toContain("12 Private Street");
   });
 });
+
+describe("account deletion", () => {
+  it("closes listings, signs out, frees the phone number and keeps paid records", async () => {
+    const leaving = await t.login({ name: "Leaving User" });
+    const id = await publishListing(t.app, leaving, mod, completeRental(geo.city.id, geo.adyar.id, { title: "Listing of a user who deletes" }));
+    expect((await t.app.inject({ method: "DELETE", url: "/v1/me", headers: leaving.auth, payload: {} })).statusCode).toBe(400);
+    const r = await t.app.inject({ method: "DELETE", url: "/v1/me", headers: leaving.auth, payload: { confirm: "DELETE" } });
+    expect(r.json().deleted).toBe(true);
+    expect((await t.db.listing.findUniqueOrThrow({ where: { id } })).status).toBe("ARCHIVED");
+    expect((await t.app.inject({ method: "POST", url: "/v1/auth/refresh", payload: { refreshToken: leaving.refreshToken } })).statusCode).toBe(401);
+    const u = await t.db.user.findUniqueOrThrow({ where: { id: leaving.id } });
+    expect(u).toMatchObject({ name: null, phone: `deleted:${leaving.id}` });
+    // the same phone can sign up again as a brand-new account
+    await t.app.inject({ method: "POST", url: "/v1/auth/otp/request", payload: { phone: leaving.phone } });
+    const again = await t.app.inject({ method: "POST", url: "/v1/auth/otp/verify", payload: { phone: leaving.phone, code: t.otp.outbox.get(leaving.phone) } });
+    expect(again.json().user.id).not.toBe(leaving.id);
+  });
+});

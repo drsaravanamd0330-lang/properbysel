@@ -1,0 +1,26 @@
+# ProperBySel API image. Build from the repository root:
+#   docker build -f infra/Dockerfile.api -t properbysel-api .
+# Written but NOT yet built or run: no Docker daemon was available while developing.
+FROM node:22-slim AS base
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN corepack enable
+WORKDIR /app
+
+FROM base AS deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/api/package.json apps/api/
+COPY packages/domain/package.json packages/domain/
+COPY packages/validation/package.json packages/validation/
+RUN pnpm install --frozen-lockfile --filter @pbs/api...
+
+FROM deps AS runtime
+COPY tsconfig.base.json ./
+COPY packages packages
+COPY apps/api apps/api
+RUN pnpm --filter @pbs/api exec prisma generate
+ENV NODE_ENV=production APP_ENV=production API_PORT=4000
+USER node
+EXPOSE 4000
+WORKDIR /app/apps/api
+# Run migrations as a separate release step (see docs/DEPLOYMENT.md), not on every container start.
+CMD ["node", "--import", "tsx", "src/server.ts"]

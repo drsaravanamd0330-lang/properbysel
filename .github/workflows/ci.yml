@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, unit and API tests, web build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pbs
+          POSTGRES_PASSWORD: pbs
+          POSTGRES_DB: properbysel_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U pbs" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://pbs:pbs@localhost:5432/properbysel_test
+      DATABASE_URL: postgresql://pbs:pbs@localhost:5432/properbysel_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @pbs/api exec prisma generate
+      - run: pnpm -r typecheck
+      - run: pnpm -r test
+      - name: Build website
+        run: pnpm --filter @pbs/web exec next build
+        env:
+          API_INTERNAL_URL: http://localhost:4000
+      - name: Export mobile bundles (Android, iOS)
+        run: pnpm --filter @pbs/mobile exec expo export --platform android --platform ios --output-dir /tmp/expo-export
+        env:
+          EXPO_NO_TELEMETRY: "1"
+
+  e2e:
+    name: Browser end-to-end flow
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pbs
+          POSTGRES_PASSWORD: pbs
+          POSTGRES_DB: properbysel
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U pbs" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://pbs:pbs@localhost:5432/properbysel
+      APP_ENV: development
+      OTP_PROVIDER: dev
+      PAYMENT_PROVIDER: sandbox
+      JWT_SECRET: ci-only-secret-not-for-production-0123456789
+      WEB_ORIGIN: http://localhost:3000
+      PUBLIC_API_URL: http://localhost:4000
+      API_INTERNAL_URL: http://localhost:4000
+      API_LOG: /tmp/api.log
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @pbs/api exec prisma migrate deploy
+      - run: pnpm --filter @pbs/api exec tsx prisma/seed.ts
+      - run: pnpm --filter @pbs/web exec next build
+      - name: Install Playwright (kept out of the workspace lockfile)
+        run: |
+          npm install -g playwright@1.63.0 wait-on@8.0.3
+          npx playwright install --with-deps chromium
+          echo "NODE_PATH=$(npm root -g)" >> "$GITHUB_ENV"
+      - name: Start API and website
+        run: |
+          (cd apps/api && nohup pnpm exec tsx src/server.ts > /tmp/api.log 2>&1 &)
+          (cd apps/web && nohup pnpm exec next start -p 3000 > /tmp/web.log 2>&1 &)
+          wait-on -t 60000 http://localhost:4000/health http://localhost:3000
+      - run: node e2e/flow.e2e.mjs
+      - run: node e2e/admin.e2e.mjs
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots
+          path: e2e/screenshots

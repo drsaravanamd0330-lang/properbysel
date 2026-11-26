@@ -1,0 +1,22 @@
+# ProperBySel website image. Build from the repository root:
+#   docker build -f infra/Dockerfile.web --build-arg API_INTERNAL_URL=http://api:4000 -t properbysel-web .
+# Written but NOT yet built or run: no Docker daemon was available while developing.
+FROM node:22-slim AS base
+RUN corepack enable
+WORKDIR /app
+
+FROM base AS build
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
+COPY apps/web apps/web
+COPY packages packages
+RUN pnpm install --frozen-lockfile --filter @pbs/web...
+ARG API_INTERNAL_URL=http://api:4000
+ENV API_INTERNAL_URL=$API_INTERNAL_URL NEXT_TELEMETRY_DISABLED=1
+RUN pnpm --filter @pbs/web exec next build
+
+FROM build AS runtime
+ENV NODE_ENV=production
+USER node
+EXPOSE 3000
+WORKDIR /app/apps/web
+CMD ["node_modules/.bin/next", "start", "-p", "3000"]

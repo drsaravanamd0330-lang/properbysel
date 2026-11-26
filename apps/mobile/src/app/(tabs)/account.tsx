@@ -33,6 +33,10 @@ export default function Account() {
         {notes.data?.items.length === 0 && <Text style={s.muted}>No notifications yet.</Text>}
       </View>
       <Button title="Log out" variant="ghost" onPress={signOut} />
+      <Button title="Delete my account" variant="danger" style={{ marginTop: 8 }} onPress={() => Alert.alert("Delete account?", "This closes all your listings and signs you out everywhere. Paid receipts are kept as required by law.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: async () => { try { await api.me.deleteAccount(); await signOut(); } catch { Alert.alert("Could not delete the account"); } } },
+      ])} />
       <Text style={[s.muted, { marginTop: 16, textAlign: "center" }]}>{BRAND.ownership}</Text>
     </ScrollView>
   );

@@ -7,7 +7,7 @@ Updated 2026-11-26. Key: **Tested** = covered by an automated test that passed Â
 | Area | Status | Notes |
 |---|---|---|
 | Phone OTP login, sessions, refresh rotation | Tested | OTP delivery is **Simulated** (dev provider). Real SMS needs MSG91 or Twilio plus DLT template registration. |
-| Production guard against dev OTP / weak secret / local storage | Tested | `apps/api/src/config.ts` |
+| Production guard against dev OTP / weak secret / local storage / sandbox payments | Tested | `apps/api/src/config.ts` |
 | Listing wizard (8 steps, autosave, resume) | Tested | API tests + browser E2E. Category-specific fields for residential, land, commercial. |
 | Listing lifecycle and audit log | Tested | Single transition table in `packages/domain`. Material edits return to review. |
 | Photo upload (type/size checks, EXIF/GPS stripped, resized) | Tested | |
@@ -58,9 +58,21 @@ Updated 2026-11-26. Key: **Tested** = covered by an automated test that passed Â
 | Compare up to 4 properties | Tested | Web only. Hidden or closed listings are reported as unavailable. |
 | Admin MFA | Not started | Strongly recommended before launch; `mfaSecret` column exists. |
 
+## Phase 4c: delivery and operations
+
+| Area | Status | Notes |
+|---|---|---|
+| CI workflow (typecheck, tests, web build, mobile bundle export, browser E2E) | Implemented, **not yet run on GitHub** | `.github/workflows/ci.yml`. Each step was run locally with the same commands. |
+| S3-compatible storage adapter | Tested against a fake client | Needs a real bucket to verify. |
+| MSG91 OTP adapter | Tested against a fake HTTP client | Needs an MSG91 account and a DLT-approved template. Twilio is not implemented. |
+| Account deletion (web, mobile, API) | Tested (API) | Required by both app stores. |
+| Backup, restore and restore drill scripts | Tested locally | Acceptance #15. |
+| Dockerfiles and production compose example | Written, **not built** | No Docker daemon was available. |
+| Deployment guide, runbooks, threat model, legal matrix | Written | docs/DEPLOYMENT.md, RUNBOOKS.md, THREAT_MODEL.md, LEGAL_MATRIX.md. The legal matrix needs a lawyer's review. |
+
 ## Not started yet
 
-support tickets; Tamil/Hindi localisation; email/SMS/push/WhatsApp providers; S3 storage adapter; admin MFA; CI pipeline; deployment runbooks; business launch package.
+Admin MFA; CSRF token on the web proxy; CAPTCHA before OTP; RERA number field; support tickets; Tamil/Hindi localisation; email/WhatsApp notifications and server-side push sending; Agent Pro quota enforcement; saved searches and compare in the mobile app.
 
 ## Known limitations
 

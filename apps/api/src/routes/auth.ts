@@ -85,4 +85,27 @@ export async function authRoutes(app: FastifyInstance, ctx: AppContext) {
     const user = await db.user.update({ where: { id: u.id }, data: { name: body.name, email: body.email || null } });
     return { id: user.id, name: user.name, phone: user.phone, email: user.email };
   });
+
+  /**
+   * Account deletion (required by Google Play and the App Store). Closes listings, signs out everywhere and
+   * removes personal profile data. Paid-order records and the audit trail are kept for legal retention;
+   * messages already sent stay visible to the other person under "Deleted user".
+   */
+  app.delete("/v1/me", async (req) => {
+    const u = requireUser(req);
+    const { confirm } = (req.body ?? {}) as { confirm?: string };
+    if (confirm !== "DELETE") throw new HttpError(400, "CONFIRM_REQUIRED", 'Send {"confirm":"DELETE"} to delete your account');
+    const now = new Date();
+    await db.$transaction([
+      db.listing.updateMany({ where: { ownerId: u.id, status: { notIn: ["ARCHIVED", "SOLD", "RENTED"] } }, data: { status: "ARCHIVED", closedAt: now, featuredUntil: null } }),
+      db.session.updateMany({ where: { userId: u.id, revokedAt: null }, data: { revokedAt: now } }),
+      db.pushToken.deleteMany({ where: { userId: u.id } }),
+      db.savedSearch.deleteMany({ where: { userId: u.id } }),
+      db.favourite.deleteMany({ where: { userId: u.id } }),
+      db.userRole.deleteMany({ where: { userId: u.id } }),
+      db.user.update({ where: { id: u.id }, data: { name: null, email: null, phone: `deleted:${u.id}`, mfaSecret: null, deletedAt: now } }),
+    ]);
+    await audit(db, u.id, "USER_DELETED_SELF", "User", u.id);
+    return { deleted: true };
+  });
 }
