@@ -83,6 +83,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @pbs/api exec prisma generate
       - run: pnpm --filter @pbs/api exec prisma migrate deploy
       - run: pnpm --filter @pbs/api exec tsx prisma/seed.ts
       - run: pnpm --filter @pbs/web exec next build
