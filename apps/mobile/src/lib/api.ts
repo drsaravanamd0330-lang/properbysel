@@ -4,8 +4,10 @@ import { Platform } from "react-native";
 import { createClient } from "@pbs/api-client";
 
 /** API base URL: EXPO_PUBLIC_API_URL, else app.json extra.apiUrl. Android emulators reach the host machine at 10.0.2.2. */
-const fromConfig = (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl;
-export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? fromConfig ?? (Platform.OS === "android" ? "http://10.0.2.2:4000" : "http://localhost:4000");
+const rawConfigUrl = (Constants.expoConfig?.extra as { apiUrl?: unknown } | undefined)?.apiUrl;
+// Only a non-empty string counts: on web an unset (null) value can arrive as an empty object.
+const fromConfig = typeof rawConfigUrl === "string" && rawConfigUrl ? rawConfigUrl : undefined;
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || fromConfig || (Platform.OS === "android" ? "http://10.0.2.2:4000" : "http://localhost:4000");
 
 const AT = "pbs_access", RT = "pbs_refresh";
 const store = {

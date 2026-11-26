@@ -70,6 +70,18 @@ Updated 2026-11-26. Key: **Tested** = covered by an automated test that passed Â
 | Dockerfiles and production compose example | Written, **not built** | No Docker daemon was available. |
 | Deployment guide, runbooks, threat model, legal matrix | Written | docs/DEPLOYMENT.md, RUNBOOKS.md, THREAT_MODEL.md, LEGAL_MATRIX.md. The legal matrix needs a lawyer's review. |
 
+## Phase 4d: documentation and business package
+
+| Deliverable | Where |
+|---|---|
+| API reference | docs/API.md |
+| Administrator and moderator guide | docs/ADMIN_GUIDE.md |
+| Support, moderation and fraud SOPs | docs/business/SOPS.md |
+| Store listing copy and screenshot requirements | docs/STORE_LISTING.md |
+| Founder launch checklist | docs/FOUNDER_CHECKLIST.md |
+| Business launch package (positioning, pricing, 90-day plan, supply, marketing, KPIs, costs) | Claude Doc linked from FOUNDER_CHECKLIST.md |
+| Unit economics and break-even model (editable, formulas) | docs/business/unit-economics.xlsx |
+
 ## Not started yet
 
 Admin MFA; CSRF token on the web proxy; CAPTCHA before OTP; RERA number field; support tickets; Tamil/Hindi localisation; email/WhatsApp notifications and server-side push sending; Agent Pro quota enforcement; saved searches and compare in the mobile app.
