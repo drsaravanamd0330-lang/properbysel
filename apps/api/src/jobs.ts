@@ -13,3 +13,27 @@ export async function expireListings(db: PrismaClient, now = new Date()) {
   }
   return due.length;
 }
+
+/**
+ * Saved-search alerts: one in-app notification per saved search when new matching listings were published
+ * since the last alert. Uses an atomic claim on lastAlertedAt so overlapping runs cannot double-notify.
+ */
+export async function sendSavedSearchAlerts(db: PrismaClient, now = new Date()) {
+  const { searchFilters } = await import("./routes/public");
+  const { searchQuerySchema } = await import("@pbs/validation");
+  const searches = await db.savedSearch.findMany({ where: { alerts: true, user: { blockedAt: null, deletedAt: null } }, take: 5000 });
+  let sent = 0;
+  for (const s of searches) {
+    const since = s.lastAlertedAt ?? s.createdAt;
+    const parsed = searchQuerySchema.safeParse(s.query ?? {});
+    if (!parsed.success) continue;
+    const where = { AND: [...searchFilters(parsed.data, now), { publishedAt: { gt: since, lte: now } }, { ownerId: { not: s.userId } }] };
+    const count = await db.listing.count({ where });
+    const claim = await db.savedSearch.updateMany({ where: { id: s.id, lastAlertedAt: s.lastAlertedAt }, data: { lastAlertedAt: now } });
+    if (!claim.count || count === 0) continue;
+    const qs = new URLSearchParams(Object.entries(s.query as Record<string, unknown>).flatMap(([k, v]) => (Array.isArray(v) ? v.map((x) => [k, String(x)]) : [[k, String(v)]]))).toString();
+    await db.notification.create({ data: { userId: s.userId, type: "SAVED_SEARCH_MATCH", title: `${count} new ${count === 1 ? "property" : "properties"} for “${s.name}”`, body: "New listings match your saved search.", link: `/search?${qs}&sort=newest` } });
+    sent++;
+  }
+  return sent;
+}

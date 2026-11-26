@@ -8,6 +8,7 @@ import { SITE_URL } from "@/lib/config";
 import { headlinePrice, categoryLabel, advertiserLabel, areaLabel, txLabel, fmtDate, AMENITY_LABEL, statusLabel } from "@/lib/format";
 import { ListingCard } from "@/components/ListingCard";
 import { EnquiryPanel } from "@/components/EnquiryPanel";
+import { CompareButton } from "@/components/CompareButton";
 
 type Loaded = { kind: "ok"; l: PublicListing } | { kind: "gone"; title?: string; status?: string } | { kind: "missing" };
 
@@ -90,6 +91,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ slug:
             {l.verifications.map((v) => <span key={v} className="badge badge-ok">✓ {v}</span>)}
           </div>
           <h1>{l.title}</h1>
+          <CompareButton id={l.id} />
           <p className="muted" style={{ marginTop: -6 }}>{[l.landmark, l.locality?.name, l.city?.name, l.postcode].filter(Boolean).join(", ")}</p>
           <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--navy-900)" }}>{headlinePrice(l)} {l.negotiable && <span className="badge">Negotiable</span>}</div>
 

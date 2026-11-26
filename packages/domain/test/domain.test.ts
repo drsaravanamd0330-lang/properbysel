@@ -4,6 +4,7 @@ import { nextStatus, TransitionError, rupeesToPaise, formatINR, formatINRShort, 
 describe("listing state machine", () => {
   it("owner submits a draft", () => expect(nextStatus("DRAFT", "SUBMIT", "OWNER")).toBe("PENDING_REVIEW"));
   it("moderator approves", () => expect(nextStatus("PENDING_REVIEW", "APPROVE", "MODERATOR")).toBe("PUBLISHED"));
+  it("moderator takes down a live listing; owner cannot", () => { expect(nextStatus("PUBLISHED", "TAKE_DOWN", "MODERATOR")).toBe("CHANGES_REQUESTED"); expect(() => nextStatus("PUBLISHED", "TAKE_DOWN", "OWNER")).toThrow(TransitionError); });
   it("owner cannot approve own listing", () => expect(() => nextStatus("PENDING_REVIEW", "APPROVE", "OWNER")).toThrow(TransitionError));
   it("cannot publish a draft directly", () => expect(() => nextStatus("DRAFT", "APPROVE", "MODERATOR")).toThrow(TransitionError));
   it("material edit sends live listing back to review", () => expect(nextStatus("PUBLISHED", "EDIT_MATERIAL", "OWNER")).toBe("PENDING_REVIEW"));

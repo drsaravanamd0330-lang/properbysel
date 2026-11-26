@@ -33,6 +33,17 @@ export interface Order {
   id: string; status: OrderStatus; amountPaise: number; taxPaise: number; totalPaise: number; invoiceNumber: string | null; listingId: string | null; createdAt: string;
   plan: { code: string; name: string; kind: Plan["kind"] }; entitlement: { startsAt: string; endsAt: string; revoked: boolean } | null;
 }
+export interface SavedSearch { id: string; name: string; query: Record<string, unknown>; alerts: boolean; createdAt: string; lastAlertedAt: string | null }
+export interface AdminReport { id: string; reason: string; details: string | null; status: string; resolution: string | null; createdAt: string; reporter: { id: string; name: string | null }; listing: { id: string; title: string | null; status: ListingStatus; reportCount: number } | null }
+export interface AdminUser { id: string; name: string | null; phone: string; roles: string[]; createdAt: string; blocked: boolean; isDemo: boolean; listingCount: number; reportsMade: number }
+export interface AuditEntry { id: string; action: string; entityType: string; entityId: string; meta: Record<string, unknown>; createdAt: string; actor: { id: string; name: string | null } | null }
+export interface Metrics {
+  generatedAt: string; excludesDemoData: boolean; users: { total: number; new7d: number };
+  listings: { live: number; byStatus: Record<string, number>; activeAdvertisers30d: number };
+  moderation: { pending: number; oldestPendingHours: number | null; medianReviewHours30d: number | null; openReports: number };
+  demand: { enquiries7d: number; enquiries30d: number; enquiriesPerLiveListing30d: number | null };
+  revenue: { paidOrders30d: number; grossPaise30d: number; netOfGstPaise30d: number };
+}
 export interface SearchResult { items: PublicListing[]; total: number; page: number; pageSize: number; totalPages: number }
 export interface InboxItem {
   id: string; stage: LeadStage; leadNotes: string | null; createdAt: string; conversationId: string;
@@ -143,6 +154,13 @@ export function createClient(opts: ClientOptions) {
       send: (id: string, body: string) => req<{ id: string; body: string; at: string; fromMe: boolean }>("POST", `/v1/conversations/${id}/messages`, { body }),
       block: (id: string) => req<{ blocked: true }>("POST", `/v1/conversations/${id}/block`),
     },
+    saved: {
+      list: () => req<{ items: SavedSearch[] }>("GET", "/v1/me/saved-searches"),
+      create: (name: string, query: Record<string, unknown>, alerts = true) => req<SavedSearch>("POST", "/v1/me/saved-searches", { name, query, alerts }),
+      update: (id: string, b: { alerts?: boolean; name?: string }) => req<SavedSearch>("PATCH", `/v1/me/saved-searches/${id}`, b),
+      remove: (id: string) => req<{ ok: true }>("DELETE", `/v1/me/saved-searches/${id}`),
+    },
+    compare: (ids: string[]) => req<{ items: PublicListing[]; unavailable: string[] }>("GET", `/v1/compare?ids=${ids.map(encodeURIComponent).join(",")}`),
     billing: {
       plans: () => req<{ items: Plan[] }>("GET", "/v1/plans"),
       createOrder: (planCode: string, listingId?: string) => req<{ order: Order; checkoutUrl: string; clientParams: Record<string, unknown> | null; provider: string }>("POST", "/v1/orders", { planCode, listingId }),
@@ -151,6 +169,13 @@ export function createClient(opts: ClientOptions) {
       entitlements: () => req<{ items: { kind: string; plan: string; listingId: string | null; startsAt: string; endsAt: string; listingQuota: number | null }[] }>("GET", "/v1/me/entitlements"),
     },
     admin: {
+      reports: (status?: string) => req<{ items: AdminReport[] }>("GET", `/v1/admin/reports${qs({ status })}`),
+      reportAction: (id: string, action: "START_REVIEW" | "DISMISS" | "TAKE_DOWN", note?: string) => req<{ id: string; status: string }>("POST", `/v1/admin/reports/${id}/action`, { action, note }),
+      users: (q?: string, role?: string) => req<{ items: AdminUser[] }>("GET", `/v1/admin/users${qs({ q, role })}`),
+      setRoles: (id: string, roles: string[]) => req<{ id: string; roles: string[] }>("PUT", `/v1/admin/users/${id}/roles`, { roles }),
+      block: (id: string, blocked: boolean, reason: string) => req<{ id: string; blocked: boolean }>("POST", `/v1/admin/users/${id}/block`, { blocked, reason }),
+      audit: (f: { entityType?: string; entityId?: string; actorId?: string; action?: string; before?: string } = {}) => req<{ items: AuditEntry[]; nextBefore: string | null }>("GET", `/v1/admin/audit${qs(f)}`),
+      metrics: () => req<Metrics>("GET", "/v1/admin/metrics"),
       orders: (status?: OrderStatus) => req<{ items: (Order & { user: { id: string; name: string | null }; provider: string })[] }>("GET", `/v1/admin/orders${qs({ status })}`),
       refund: (id: string) => req<{ status: string }>("POST", `/v1/admin/orders/${id}/refund`),
       flags: () => req<{ items: { key: string; enabled: boolean }[] }>("GET", "/v1/admin/flags"),

@@ -22,7 +22,11 @@ export async function authRoutes(app: FastifyInstance, ctx: AppContext) {
     return { accessToken: await tokens.sign({ id: userId, roles }), refreshToken, roles };
   }
 
-  app.post("/v1/auth/otp/request", { config: { rateLimit: { max: 10, timeWindow: "10 minutes" } } }, async (req) => {
+  // Per-IP limits. Automated tests share one IP for every simulated user, so the IP limit is relaxed there only;
+  // the per-phone limit below still applies everywhere.
+  const ipLimit = (n: number) => (cfg.APP_ENV === "test" ? n * 50 : n);
+
+  app.post("/v1/auth/otp/request", { config: { rateLimit: { max: ipLimit(10), timeWindow: "10 minutes" } } }, async (req) => {
     const { phone } = otpRequestSchema.parse(req.body);
     const recent = await db.otpChallenge.count({ where: { phone, createdAt: { gt: new Date(Date.now() - OTP_WINDOW_MIN * 60_000) } } });
     if (recent >= OTP_MAX_PER_WINDOW) throw new HttpError(429, "OTP_LIMIT", "Too many codes requested. Try again in a few minutes.");
@@ -32,7 +36,7 @@ export async function authRoutes(app: FastifyInstance, ctx: AppContext) {
     return { sent: true, provider: otp.name === "dev" ? "development (code shown in API log)" : otp.name, expiresInSeconds: cfg.OTP_TTL_SECONDS };
   });
 
-  app.post("/v1/auth/otp/verify", { config: { rateLimit: { max: 20, timeWindow: "10 minutes" } } }, async (req) => {
+  app.post("/v1/auth/otp/verify", { config: { rateLimit: { max: ipLimit(20), timeWindow: "10 minutes" } } }, async (req) => {
     const { phone, code, name } = otpVerifySchema.parse(req.body);
     const ch = await db.otpChallenge.findFirst({ where: { phone, consumedAt: null }, orderBy: { createdAt: "desc" } });
     if (!ch || ch.expiresAt < new Date()) throw new HttpError(400, "OTP_EXPIRED", "This code has expired. Request a new one.");

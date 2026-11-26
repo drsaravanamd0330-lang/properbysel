@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CATEGORY_LABEL, PROPERTY_CATEGORIES, AMENITIES, ADVERTISER_LABEL, ADVERTISER_TYPES } from "@pbs/domain";
+import { SaveSearch } from "@/components/SaveSearch";
 import { ApiError, type SearchResult, type City } from "@pbs/api-client";
 import { publicApi, freshApi } from "@/lib/server-api";
 import { ListingCard } from "@/components/ListingCard";
@@ -80,6 +81,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
           <div className="row" style={{ marginBottom: 12 }}>
             <a href="#filters" className="btn btn-ghost btn-sm show-sm">Filters</a><h1 style={{ fontSize: "1.3rem", margin: 0 }}>{res ? `${res.total.toLocaleString("en-IN")} ${res.total === 1 ? "property" : "properties"}` : "Search"}</h1>
             <div className="spacer" />
+            <SaveSearch query={Object.fromEntries(Object.entries(query).filter(([k]) => !["page", "sort", "bbox"].includes(k)))} suggestedName={[one(sp.transaction) === "SALE" ? "Buy" : one(sp.transaction) === "RENT" ? "Rent" : "Properties", localities.find((x) => x.slug === one(sp.locality))?.name ?? cities.find((c) => c.slug === one(sp.city))?.name].filter(Boolean).join(" in ") || "My search"} />
             <nav className="row" aria-label="Sort and view" style={{ gap: 6 }}>
               {[["relevance", "Relevance"], ["newest", "Newest"], ["price_asc", "Price ↑"], ["price_desc", "Price ↓"]].map(([v, l]) => (
                 <Link key={v} href={link({ sort: v, page: undefined })} className={`btn btn-sm ${(one(sp.sort) ?? "relevance") === v ? "btn-navy" : "btn-ghost"}`} aria-current={(one(sp.sort) ?? "relevance") === v ? "true" : undefined}>{l}</Link>

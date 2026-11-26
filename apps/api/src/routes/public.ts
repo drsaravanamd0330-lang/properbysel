@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { Prisma } from "@prisma/client";
+import type { z } from "zod";
 import { searchQuerySchema, reportSchema } from "@pbs/validation";
 import type { AppContext } from "../context";
 import { notFound, HttpError } from "../lib/errors";
@@ -7,11 +8,43 @@ import { publicListing } from "../lib/serialize";
 import { requireUser } from "../lib/auth";
 import { audit } from "../lib/audit";
 
+type SearchQuery = z.infer<typeof searchQuerySchema>;
 const include = { media: true, city: true, locality: true, owner: { select: { id: true, name: true } }, verifications: true } as const;
 const arr = <T>(v: T | T[] | undefined): T[] | undefined => (v === undefined ? undefined : Array.isArray(v) ? v : [v]);
 
 /** The single definition of "publicly visible". */
 export const publicWhere = (now = new Date()): Prisma.ListingWhereInput => ({ status: "PUBLISHED", expiresAt: { gt: now } });
+
+/** Builds the search filter. Shared by public search and saved-search alerts. */
+export function searchFilters(q: SearchQuery, now = new Date()): Prisma.ListingWhereInput[] {
+  const and: Prisma.ListingWhereInput[] = [publicWhere(now)];
+  if (q.city) and.push({ city: { slug: q.city } });
+  if (q.locality) and.push({ locality: { slug: q.locality } });
+  if (q.postcode) and.push({ OR: [{ postcode: q.postcode }, { locality: { postcodes: { has: q.postcode } } }] });
+  if (q.transaction) and.push({ transaction: q.transaction });
+  const cats = arr(q.category); if (cats) and.push({ category: { in: cats } });
+  if (q.minPrice !== undefined) and.push({ sortPricePaise: { gte: BigInt(q.minPrice) * 100n } });
+  if (q.maxPrice !== undefined) and.push({ sortPricePaise: { lte: BigInt(q.maxPrice) * 100n } });
+  if (q.minArea !== undefined) and.push({ areaSqft: { gte: q.minArea } });
+  if (q.maxArea !== undefined) and.push({ areaSqft: { lte: q.maxArea } });
+  const beds = arr(q.bedrooms); if (beds) and.push(beds.includes(5) ? { OR: [{ bedrooms: { in: beds } }, { bedrooms: { gte: 5 } }] } : { bedrooms: { in: beds } });
+  if (q.furnishing) and.push({ furnishing: q.furnishing });
+  if (q.advertiserType) and.push({ advertiserType: q.advertiserType });
+  const am = arr(q.amenities); if (am) and.push({ amenities: { hasEvery: am } });
+  if (q.bbox) {
+    const [minLng, minLat, maxLng, maxLat] = q.bbox.split(",").map(Number) as [number, number, number, number];
+    and.push({ lat: { gte: minLat, lte: maxLat }, lng: { gte: minLng, lte: maxLng } });
+  }
+  if (q.q) {
+    const t = q.q;
+    and.push({ OR: [
+      { title: { contains: t, mode: "insensitive" } }, { description: { contains: t, mode: "insensitive" } },
+      { landmark: { contains: t, mode: "insensitive" } }, { postcode: t },
+      { locality: { name: { contains: t, mode: "insensitive" } } }, { city: { name: { contains: t, mode: "insensitive" } } },
+    ] });
+  }
+  return and;
+}
 
 export async function publicRoutes(app: FastifyInstance, ctx: AppContext) {
   const { db } = ctx;
@@ -30,32 +63,7 @@ export async function publicRoutes(app: FastifyInstance, ctx: AppContext) {
   app.get("/v1/search", async (req) => {
     const q = searchQuerySchema.parse(req.query);
     const now = new Date();
-    const and: Prisma.ListingWhereInput[] = [publicWhere(now)];
-    if (q.city) and.push({ city: { slug: q.city } });
-    if (q.locality) and.push({ locality: { slug: q.locality } });
-    if (q.postcode) and.push({ OR: [{ postcode: q.postcode }, { locality: { postcodes: { has: q.postcode } } }] });
-    if (q.transaction) and.push({ transaction: q.transaction });
-    const cats = arr(q.category); if (cats) and.push({ category: { in: cats } });
-    if (q.minPrice !== undefined) and.push({ sortPricePaise: { gte: BigInt(q.minPrice) * 100n } });
-    if (q.maxPrice !== undefined) and.push({ sortPricePaise: { lte: BigInt(q.maxPrice) * 100n } });
-    if (q.minArea !== undefined) and.push({ areaSqft: { gte: q.minArea } });
-    if (q.maxArea !== undefined) and.push({ areaSqft: { lte: q.maxArea } });
-    const beds = arr(q.bedrooms); if (beds) and.push(beds.includes(5) ? { OR: [{ bedrooms: { in: beds } }, { bedrooms: { gte: 5 } }] } : { bedrooms: { in: beds } });
-    if (q.furnishing) and.push({ furnishing: q.furnishing });
-    if (q.advertiserType) and.push({ advertiserType: q.advertiserType });
-    const am = arr(q.amenities); if (am) and.push({ amenities: { hasEvery: am } });
-    if (q.bbox) {
-      const [minLng, minLat, maxLng, maxLat] = q.bbox.split(",").map(Number) as [number, number, number, number];
-      and.push({ lat: { gte: minLat, lte: maxLat }, lng: { gte: minLng, lte: maxLng } });
-    }
-    if (q.q) {
-      const t = q.q;
-      and.push({ OR: [
-        { title: { contains: t, mode: "insensitive" } }, { description: { contains: t, mode: "insensitive" } },
-        { landmark: { contains: t, mode: "insensitive" } }, { postcode: t },
-        { locality: { name: { contains: t, mode: "insensitive" } } }, { city: { name: { contains: t, mode: "insensitive" } } },
-      ] });
-    }
+    const and = searchFilters(q, now);
     const where: Prisma.ListingWhereInput = { AND: and };
     const orderBy: Prisma.ListingOrderByWithRelationInput[] =
       q.sort === "newest" ? [{ publishedAt: "desc" }, { id: "asc" }]

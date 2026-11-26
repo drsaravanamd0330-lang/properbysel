@@ -46,9 +46,21 @@ Updated 2026-11-26. Key: **Tested** = covered by an automated test that passed Â
 | Mobile: feature a listing, order status | Implemented | Opens checkout in the browser and returns via `properbysel://order/<id>`. Type-checked; not driven by E2E. |
 | Agent Pro listing quota enforcement | Not started | Entitlement is recorded; quota is not yet enforced at publish time. |
 
+## Phase 4b: admin tools, saved searches, comparison
+
+| Area | Status | Notes |
+|---|---|---|
+| Reports queue: start review, dismiss, take down (owner must fix and resubmit) | Tested | Support can view; only moderators and admins act. Owner gets an in-app notice. |
+| Users and roles: search, grant/remove roles, block/unblock with a reason | Tested | Role changes and blocks revoke all sessions. Support sees masked phone numbers. Admins cannot remove their own admin role. |
+| Audit log viewer with filters and paging | Tested | Every listing transition, moderation decision, payment, refund, role change and block is recorded. |
+| Launch metrics (live listings, enquiries, review time, reports, revenue) | Tested | Demo data excluded. |
+| Saved searches with in-app alerts every 15 minutes | Tested | One notification per search per run; atomic claim prevents duplicates. Email/SMS alerts not started. Web only; not yet in the mobile app. |
+| Compare up to 4 properties | Tested | Web only. Hidden or closed listings are reported as unavailable. |
+| Admin MFA | Not started | Strongly recommended before launch; `mfaSecret` column exists. |
+
 ## Not started yet
 
-saved searches and comparison; admin user/role/report/ticket management and metrics; Tamil/Hindi localisation; email/SMS/push/WhatsApp providers; S3 storage adapter; admin MFA; CI pipeline; deployment runbooks; business launch package.
+support tickets; Tamil/Hindi localisation; email/SMS/push/WhatsApp providers; S3 storage adapter; admin MFA; CI pipeline; deployment runbooks; business launch package.
 
 ## Known limitations
 

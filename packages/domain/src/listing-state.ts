@@ -8,7 +8,7 @@ export type ListingStatus = (typeof LISTING_STATUSES)[number];
 
 export type ListingAction =
   | "SUBMIT" | "APPROVE" | "REQUEST_CHANGES" | "REJECT" | "PAUSE" | "RESUME"
-  | "EXPIRE" | "RENEW" | "MARK_SOLD" | "MARK_RENTED" | "ARCHIVE" | "EDIT_MATERIAL";
+  | "EXPIRE" | "RENEW" | "MARK_SOLD" | "MARK_RENTED" | "ARCHIVE" | "EDIT_MATERIAL" | "TAKE_DOWN";
 
 type Actor = "OWNER" | "MODERATOR" | "SYSTEM";
 
@@ -20,6 +20,8 @@ export const TRANSITIONS: Record<ListingAction, Transition> = {
   REQUEST_CHANGES: { from: ["PENDING_REVIEW"], to: "CHANGES_REQUESTED", by: ["MODERATOR"] },
   REJECT:          { from: ["PENDING_REVIEW"], to: "REJECTED", by: ["MODERATOR"] },
   PAUSE:           { from: ["PUBLISHED"], to: "PAUSED", by: ["OWNER", "MODERATOR"] },
+  // Moderator takedown after a report: the owner must edit and resubmit, so it goes back through review.
+  TAKE_DOWN:       { from: ["PUBLISHED", "PAUSED"], to: "CHANGES_REQUESTED", by: ["MODERATOR"] },
   RESUME:          { from: ["PAUSED"], to: "PUBLISHED", by: ["OWNER"] },
   EXPIRE:          { from: ["PUBLISHED", "PAUSED"], to: "EXPIRED", by: ["SYSTEM"] },
   RENEW:           { from: ["EXPIRED"], to: "PENDING_REVIEW", by: ["OWNER"] },

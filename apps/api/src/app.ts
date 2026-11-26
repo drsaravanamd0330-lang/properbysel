@@ -18,6 +18,8 @@ import { publicRoutes } from "./routes/public";
 import { enquiryRoutes } from "./routes/enquiries";
 import { mediaRoutes } from "./routes/media";
 import { paymentRoutes } from "./routes/payments";
+import { adminRoutes } from "./routes/admin";
+import { savedRoutes } from "./routes/saved";
 import { createPaymentProvider, type PaymentProvider } from "./lib/payments";
 
 export interface BuildOptions { cfg?: Config; db: PrismaClient; otp?: OtpSender; storage?: Storage; payments?: PaymentProvider; logger?: boolean }
@@ -69,5 +71,7 @@ export async function buildApp(opts: BuildOptions): Promise<{ app: FastifyInstan
   await enquiryRoutes(app, ctx);
   await mediaRoutes(app, ctx);
   await paymentRoutes(app, ctx);
+  await adminRoutes(app, ctx);
+  await savedRoutes(app, ctx);
   return { app, ctx };
 }
