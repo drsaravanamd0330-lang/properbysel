@@ -62,7 +62,7 @@ Updated 2026-11-26. Key: **Tested** = covered by an automated test that passed Â
 
 | Area | Status | Notes |
 |---|---|---|
-| CI workflow (typecheck, tests, web build, mobile bundle export, browser E2E) | Implemented, **not yet run on GitHub** | `.github/workflows/ci.yml`. Each step was run locally with the same commands. |
+| CI workflow (typecheck, tests, web build, mobile bundle export, browser E2E) | Tested on GitHub Actions | `.github/workflows/ci.yml`; first green run 26 Nov 2026 (run 45830770655). |
 | S3-compatible storage adapter | Tested against a fake client | Needs a real bucket to verify. |
 | MSG91 OTP adapter | Tested against a fake HTTP client | Needs an MSG91 account and a DLT-approved template. Twilio is not implemented. |
 | Account deletion (web, mobile, API) | Tested (API) | Required by both app stores. |

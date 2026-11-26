@@ -25,7 +25,7 @@ Nothing below has been started: each item needs the founder's identity, money or
 ## Engineering before real users
 - [ ] Admin MFA; CSRF token on the web proxy; CAPTCHA before OTP
 - [ ] RERA number field
-- [ ] Verify S3, MSG91, Razorpay on staging; first green CI run on GitHub
+- [ ] Verify S3, MSG91, Razorpay on staging
 - [ ] Native Android and iOS builds tested on devices; app-review login
 - [ ] Restore drill on the managed database
 
