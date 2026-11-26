@@ -1,0 +1,12 @@
+# Local PostgreSQL for development. Usage: docker compose -f infra/docker-compose.yml up -d
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: pbs
+      POSTGRES_PASSWORD: pbs
+      POSTGRES_DB: properbysel
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data, ./init-test-db.sql:/docker-entrypoint-initdb.d/init.sql:ro]
+volumes:
+  pgdata:

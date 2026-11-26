@@ -9,3 +9,4 @@ coverage/
 apps/api/storage/
 playwright-report/
 test-results/
+e2e/screenshots/
