@@ -1,0 +1,11 @@
+node_modules/
+.next/
+dist/
+.env
+.env.*.local
+*.log
+coverage/
+.expo/
+apps/api/storage/
+playwright-report/
+test-results/

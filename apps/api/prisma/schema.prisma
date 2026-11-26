@@ -1,0 +1,487 @@
+// ProperBySel database schema (PostgreSQL 16)
+// Money: integer paise (BigInt). Area: Decimal plus original unit.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADVERTISER
+  AGENT
+  BUILDER
+  MODERATOR
+  SUPPORT
+  ADMIN
+}
+
+enum AdvertiserType {
+  OWNER
+  AGENT
+  BUILDER
+}
+
+enum TransactionType {
+  SALE
+  RENT
+  LEASE
+}
+
+enum PropertyCategory {
+  APARTMENT
+  INDEPENDENT_HOUSE
+  VILLA
+  RESIDENTIAL_PLOT
+  AGRICULTURAL_LAND
+  COMMERCIAL_OFFICE
+  SHOP
+  WAREHOUSE
+  INDUSTRIAL
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  CHANGES_REQUESTED
+  PUBLISHED
+  REJECTED
+  PAUSED
+  EXPIRED
+  SOLD
+  RENTED
+  ARCHIVED
+}
+
+enum Furnishing {
+  UNFURNISHED
+  SEMI_FURNISHED
+  FURNISHED
+}
+
+enum AreaUnit {
+  SQFT
+  SQM
+  ACRE
+  HECTARE
+  CENT
+  GROUND
+}
+
+enum LeadStage {
+  NEW
+  CONTACTED
+  VISIT_SCHEDULED
+  NEGOTIATING
+  CLOSED
+  LOST
+}
+
+enum VisitStatus {
+  REQUESTED
+  ACCEPTED
+  DECLINED
+  RESCHEDULE_PROPOSED
+  CANCELLED
+  COMPLETED
+}
+
+enum MediaKind {
+  PHOTO
+  VIDEO
+}
+
+enum ReportStatus {
+  OPEN
+  IN_REVIEW
+  ACTIONED
+  DISMISSED
+}
+
+enum VerificationKind {
+  PHONE_CONFIRMED
+  IDENTITY_REVIEWED
+  PROPERTY_VISITED
+  DOCUMENTS_REVIEWED
+}
+
+model User {
+  id              String    @id @default(cuid())
+  phone           String    @unique
+  phoneVerifiedAt DateTime?
+  name            String?
+  email           String?   @unique
+  isDemo          Boolean   @default(false)
+  mfaSecret       String?
+  deletedAt       DateTime?
+  blockedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  roles           UserRole[]
+  sessions        Session[]
+  memberships     OrganizationMember[]
+  listings        Listing[]          @relation("ListingOwner")
+  favourites      Favourite[]
+  savedSearches   SavedSearch[]
+  enquiries       Enquiry[]          @relation("EnquiryBuyer")
+  participants    ConversationParticipant[]
+  messages        Message[]
+  notifications   Notification[]
+  consents        Consent[]
+  reports         Report[]           @relation("ReportReporter")
+  reviews         ModerationReview[] @relation("ReviewModerator")
+  auditLogs       AuditLog[]
+  documents       PrivateDocument[]
+  verifications   Verification[]     @relation("VerificationSubject")
+}
+
+model UserRole {
+  userId    String
+  role      Role
+  grantedAt DateTime @default(now())
+  grantedBy String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, role])
+}
+
+model OtpChallenge {
+  id         String    @id @default(cuid())
+  phone      String
+  codeHash   String
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  ipHash     String?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone, createdAt])
+}
+
+model Session {
+  id               String    @id @default(cuid())
+  userId           String
+  refreshTokenHash String    @unique
+  userAgent        String?
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Organization {
+  id         String               @id @default(cuid())
+  name       String
+  kind       AdvertiserType
+  reraNumber String?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+  members    OrganizationMember[]
+  listings   Listing[]
+}
+
+model OrganizationMember {
+  organizationId String
+  userId         String
+  isOwner        Boolean      @default(false)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, userId])
+}
+
+model City {
+  id         String     @id @default(cuid())
+  name       String
+  slug       String     @unique
+  state      String
+  isActive   Boolean    @default(true)
+  lat        Decimal?   @db.Decimal(9, 6)
+  lng        Decimal?   @db.Decimal(9, 6)
+  localities Locality[]
+  listings   Listing[]
+}
+
+model Locality {
+  id        String    @id @default(cuid())
+  cityId    String
+  name      String
+  slug      String
+  postcodes String[]
+  lat       Decimal?  @db.Decimal(9, 6)
+  lng       Decimal?  @db.Decimal(9, 6)
+  city      City      @relation(fields: [cityId], references: [id])
+  listings  Listing[]
+
+  @@unique([cityId, slug])
+}
+
+model Listing {
+  id                  String            @id @default(cuid())
+  ownerId             String
+  organizationId      String?
+  status              ListingStatus     @default(DRAFT)
+  advertiserType      AdvertiserType?
+  transaction         TransactionType?
+  category            PropertyCategory?
+  title               String?
+  description         String?
+  cityId              String?
+  localityId          String?
+  address             String? // private: never in public responses
+  postcode            String?
+  landmark            String?
+  lat                 Decimal?          @db.Decimal(9, 6) // exact, private
+  lng                 Decimal?          @db.Decimal(9, 6)
+  attributes          Json              @default("{}")
+  amenities           String[]
+  bedrooms            Int? // denormalized for search
+  furnishing          Furnishing?
+  areaSqft            Decimal?          @db.Decimal(14, 4) // normalized for search
+  areaValue           Decimal?          @db.Decimal(14, 4) // as entered
+  areaUnit            AreaUnit?
+  pricePaise          BigInt?
+  rentPaise           BigInt?
+  leasePaise          BigInt?
+  depositPaise        BigInt?
+  maintenancePaise    BigInt?
+  sortPricePaise      BigInt? // price, rent or lease, depending on transaction
+  negotiable          Boolean           @default(false)
+  brokerageDisclosure String?
+  availableFrom       DateTime?
+  showPhone           Boolean           @default(false)
+  contactConsent      Boolean           @default(false)
+  investmentSuitable  Boolean           @default(false)
+  wizardStep          Int               @default(1)
+  isDemo              Boolean           @default(false)
+  submittedAt         DateTime?
+  publishedAt         DateTime?
+  expiresAt           DateTime?
+  closedAt            DateTime?
+  featuredUntil       DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  owner        User               @relation("ListingOwner", fields: [ownerId], references: [id])
+  organization Organization?      @relation(fields: [organizationId], references: [id])
+  city         City?              @relation(fields: [cityId], references: [id])
+  locality     Locality?          @relation(fields: [localityId], references: [id])
+  media        Media[]
+  documents    PrivateDocument[]
+  reviews      ModerationReview[]
+  favourites   Favourite[]
+  enquiries    Enquiry[]
+  reports      Report[]
+  verifications Verification[]
+
+  @@index([status, cityId, transaction, category])
+  @@index([status, publishedAt])
+  @@index([status, sortPricePaise])
+  @@index([lat, lng])
+  @@index([ownerId, status])
+}
+
+model Media {
+  id         String    @id @default(cuid())
+  listingId  String
+  kind       MediaKind @default(PHOTO)
+  storageKey String
+  mimeType   String
+  bytes      Int
+  width      Int?
+  height     Int?
+  position   Int       @default(0)
+  caption    String?
+  createdAt  DateTime  @default(now())
+  listing    Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, position])
+}
+
+model PrivateDocument {
+  id         String   @id @default(cuid())
+  ownerId    String
+  listingId  String?
+  label      String
+  storageKey String
+  mimeType   String
+  bytes      Int
+  createdAt  DateTime @default(now())
+  owner      User     @relation(fields: [ownerId], references: [id])
+  listing    Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+}
+
+model ModerationReview {
+  id          String        @id @default(cuid())
+  listingId   String
+  moderatorId String
+  decision    String // APPROVE | REQUEST_CHANGES | REJECT
+  note        String?
+  fromStatus  ListingStatus
+  toStatus    ListingStatus
+  createdAt   DateTime      @default(now())
+  listing     Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  moderator   User          @relation("ReviewModerator", fields: [moderatorId], references: [id])
+
+  @@index([listingId, createdAt])
+}
+
+model Verification {
+  id          String           @id @default(cuid())
+  kind        VerificationKind
+  userId      String?
+  listingId   String?
+  reviewedBy  String
+  note        String?
+  createdAt   DateTime         @default(now())
+  user        User?            @relation("VerificationSubject", fields: [userId], references: [id])
+  listing     Listing?         @relation(fields: [listingId], references: [id], onDelete: Cascade)
+}
+
+model Favourite {
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@id([userId, listingId])
+}
+
+model SavedSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  query     Json
+  alerts    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Enquiry {
+  id             String       @id @default(cuid())
+  listingId      String
+  buyerId        String
+  advertiserId   String
+  conversationId String       @unique
+  message        String
+  shareBuyerPhone Boolean     @default(false)
+  stage          LeadStage    @default(NEW)
+  leadNotes      String?
+  idempotencyKey String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  listing        Listing      @relation(fields: [listingId], references: [id])
+  buyer          User         @relation("EnquiryBuyer", fields: [buyerId], references: [id])
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  visits         VisitRequest[]
+
+  @@unique([listingId, buyerId]) // one lead per buyer per listing; repeat enquiries reuse it
+  @@unique([buyerId, idempotencyKey])
+  @@index([advertiserId, stage, createdAt])
+}
+
+model Conversation {
+  id           String                    @id @default(cuid())
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  participants ConversationParticipant[]
+  messages     Message[]
+  enquiry      Enquiry?
+}
+
+model ConversationParticipant {
+  conversationId String
+  userId         String
+  lastReadAt     DateTime?
+  blocked        Boolean      @default(false)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  body           String
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt])
+}
+
+model VisitRequest {
+  id          String      @id @default(cuid())
+  enquiryId   String
+  requestedBy String
+  proposedAt  DateTime
+  status      VisitStatus @default(REQUESTED)
+  note        String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  enquiry     Enquiry     @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  listingId  String?
+  reporterId String
+  reason     String
+  details    String?
+  status     ReportStatus @default(OPEN)
+  resolution String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  listing    Listing?     @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  reporter   User         @relation("ReportReporter", fields: [reporterId], references: [id])
+
+  @@index([status, createdAt])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+}
+
+model Consent {
+  id        String   @id @default(cuid())
+  userId    String
+  purpose   String // e.g. TERMS_v1, MARKETING_SMS, WHATSAPP_UPDATES, LISTING_CONTACT
+  granted   Boolean
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  meta       Json     @default("{}")
+  createdAt  DateTime @default(now())
+  actor      User?    @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId, createdAt])
+}

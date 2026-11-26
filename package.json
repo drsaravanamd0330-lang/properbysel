@@ -1,0 +1,18 @@
+{
+  "name": "properbysel",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "dev:api": "pnpm --filter @pbs/api dev",
+    "dev:web": "pnpm --filter @pbs/web dev",
+    "db:migrate": "pnpm --filter @pbs/api db:migrate",
+    "db:seed": "pnpm --filter @pbs/api db:seed",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "26.6.11"
+  }
+}
