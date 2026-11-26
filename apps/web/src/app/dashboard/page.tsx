@@ -41,12 +41,13 @@ export default function MyListings() {
         <tbody>{data.items.map((l) => <tr key={l.id}>
           <td><b>{l.title || "Untitled draft"}</b><div className="small muted">{headlinePrice(l)} · {l.locality?.name ?? "No location yet"}</div>
             {l.status === "PUBLISHED" && <Link className="small" href={l.path}>View public page</Link>}</td>
-          <td><span className={`badge badge-status-${l.status}`}>{statusLabel(l.status)}</span>
+          <td><span className={`badge badge-status-${l.status}`}>{statusLabel(l.status)}</span>{l.isSponsored && <span className="badge" style={{ marginLeft: 4 }}>Featured</span>}
             {l.expiresAt && l.status === "PUBLISHED" && <div className="small muted">Expires {fmtDate(l.expiresAt)}</div>}
             {l.status === "DRAFT" && <div className="small muted">Step {l.wizardStep} of 8</div>}</td>
           <td>{l.enquiryCount ?? 0}</td>
           <td><div className="row" style={{ gap: 6 }}>
             {["DRAFT", "CHANGES_REQUESTED", "REJECTED", "PUBLISHED", "PAUSED"].includes(l.status) && <Link className="btn btn-ghost btn-sm" href={`/post-property/${l.id}`}>{l.status === "DRAFT" ? "Continue" : "Edit"}</Link>}
+            {l.status === "PUBLISHED" && <Link className="btn btn-ghost btn-sm" href={`/dashboard/feature/${l.id}`}>{l.isSponsored ? "Extend feature" : "Feature"}</Link>}
             {actionsFor(l).map(([a, label]) => <button key={a} className="btn btn-ghost btn-sm" onClick={() => act(l, a)}>{label}</button>)}
             {l.status === "DRAFT" && <button className="btn btn-ghost btn-sm" onClick={() => removeDraft(l)}>Delete</button>}
           </div></td>

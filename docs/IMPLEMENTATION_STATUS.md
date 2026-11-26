@@ -32,9 +32,23 @@ Updated 2026-11-26. Key: **Tested** = covered by an automated test that passed Â
 | Push notifications | Implemented (client + token storage) | Sending from the server not built; needs EAS project + FCM/APNs credentials. |
 | Deep links | Implemented | `properbysel://` scheme. Universal links need the production domain. |
 
+## Phase 4a: monetization
+
+| Area | Status | Notes |
+|---|---|---|
+| Plans (featured 7/30 days, Agent Pro monthly, photoshoot behind a feature flag) | Tested | Prices are assumptions (docs/ASSUMPTIONS.md, launch prices), exclusive of 18% GST. |
+| Orders, GST calculation, receipt numbering per financial year | Tested | Receipt says "not a tax invoice" until `BUSINESS_GSTIN` is set. Tax treatment needs a CA's review. |
+| Sandbox payment provider and checkout page | Tested (**Simulated**) | Refused when `APP_ENV=production`. No real money moves. |
+| Signed webhooks, exactly-once fulfilment, amount check | Tested | Benefits are only granted from a verified webhook, never from the browser return URL. |
+| Featured placement (stacking, expiry, refunds revoke) | Tested | Max 3 sponsored results, labelled "Sponsored". |
+| Razorpay adapter | Implemented, **not run** | Needs a Razorpay merchant account and keys. Refunds are issued in the Razorpay dashboard; the webhook syncs them. |
+| Web: pricing, feature a listing, orders, receipt, admin orders/refunds/flags | Tested | Browser E2E buys a featured placement through the sandbox. |
+| Mobile: feature a listing, order status | Implemented | Opens checkout in the browser and returns via `properbysel://order/<id>`. Type-checked; not driven by E2E. |
+| Agent Pro listing quota enforcement | Not started | Entitlement is recorded; quota is not yet enforced at publish time. |
+
 ## Not started yet
 
-saved searches and comparison; plans, orders, Razorpay/sandbox payments, entitlements, invoices (Phase 4); admin user/role/report/ticket management and metrics; Tamil/Hindi localisation; email/SMS/push/WhatsApp providers; S3 storage adapter; admin MFA; CI pipeline; deployment runbooks; business launch package.
+saved searches and comparison; admin user/role/report/ticket management and metrics; Tamil/Hindi localisation; email/SMS/push/WhatsApp providers; S3 storage adapter; admin MFA; CI pipeline; deployment runbooks; business launch package.
 
 ## Known limitations
 

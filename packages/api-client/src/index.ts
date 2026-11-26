@@ -27,6 +27,12 @@ export interface OwnerListing extends PublicListing {
   showPhone: boolean; contactConsent: boolean; wizardStep: number; submittedAt: string | null; expiresAt: string | null; ownerId: string; createdAt: string;
   enquiryCount?: number; lastReview?: { decision: string; note: string | null; at: string } | null; notice?: string;
 }
+export interface Plan { code: string; name: string; description: string; kind: "FEATURED_LISTING" | "ADVERTISER_SUBSCRIPTION" | "MANUAL_SERVICE"; pricePaise: number; taxPaise: number; totalPaise: number; gstRateBps: number; durationDays: number; listingQuota: number | null }
+export type OrderStatus = "CREATED" | "PENDING" | "PAID" | "FAILED" | "REFUNDED" | "CANCELLED";
+export interface Order {
+  id: string; status: OrderStatus; amountPaise: number; taxPaise: number; totalPaise: number; invoiceNumber: string | null; listingId: string | null; createdAt: string;
+  plan: { code: string; name: string; kind: Plan["kind"] }; entitlement: { startsAt: string; endsAt: string; revoked: boolean } | null;
+}
 export interface SearchResult { items: PublicListing[]; total: number; page: number; pageSize: number; totalPages: number }
 export interface InboxItem {
   id: string; stage: LeadStage; leadNotes: string | null; createdAt: string; conversationId: string;
@@ -137,7 +143,18 @@ export function createClient(opts: ClientOptions) {
       send: (id: string, body: string) => req<{ id: string; body: string; at: string; fromMe: boolean }>("POST", `/v1/conversations/${id}/messages`, { body }),
       block: (id: string) => req<{ blocked: true }>("POST", `/v1/conversations/${id}/block`),
     },
+    billing: {
+      plans: () => req<{ items: Plan[] }>("GET", "/v1/plans"),
+      createOrder: (planCode: string, listingId?: string) => req<{ order: Order; checkoutUrl: string; clientParams: Record<string, unknown> | null; provider: string }>("POST", "/v1/orders", { planCode, listingId }),
+      orders: () => req<{ items: Order[] }>("GET", "/v1/orders"),
+      order: (id: string) => req<Order>("GET", `/v1/orders/${id}`),
+      entitlements: () => req<{ items: { kind: string; plan: string; listingId: string | null; startsAt: string; endsAt: string; listingQuota: number | null }[] }>("GET", "/v1/me/entitlements"),
+    },
     admin: {
+      orders: (status?: OrderStatus) => req<{ items: (Order & { user: { id: string; name: string | null }; provider: string })[] }>("GET", `/v1/admin/orders${qs({ status })}`),
+      refund: (id: string) => req<{ status: string }>("POST", `/v1/admin/orders/${id}/refund`),
+      flags: () => req<{ items: { key: string; enabled: boolean }[] }>("GET", "/v1/admin/flags"),
+      setFlag: (key: string, enabled: boolean) => req<{ key: string; enabled: boolean }>("PUT", `/v1/admin/flags/${key}`, { enabled }),
       queue: (status = "PENDING_REVIEW", page = 1) => req<{ items: (OwnerListing & { ownerPhone: string })[]; total: number; page: number }>("GET", `/v1/admin/listings${qs({ status, page })}`),
       listing: (id: string) => req<OwnerListing & { owner: { id: string; name: string | null; phone: string; memberSince: string; listingCount: number }; documents: { id: string; label: string; mimeType: string; bytes: number }[]; checks: { path: string; message: string }[]; reviews: { id: string; decision: string; note: string | null; createdAt: string; moderator: { name: string | null } }[]; reports: { id: string; reason: string; details: string | null; status: string; createdAt: string }[] }>("GET", `/v1/admin/listings/${id}`),
       decide: (id: string, decision: "APPROVE" | "REQUEST_CHANGES" | "REJECT", note?: string) => req<{ status: ListingStatus }>("POST", `/v1/admin/listings/${id}/decision`, { decision, note }),

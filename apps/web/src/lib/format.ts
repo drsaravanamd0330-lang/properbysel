@@ -19,3 +19,5 @@ export const statusLabel = (s: string) => s.toLowerCase().replace(/_/g, " ").rep
 export const fmtDate = (d: string | null | undefined) => (d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "");
 export const fmtDateTime = (d: string) => new Date(d).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 export const AMENITY_LABEL = (a: string) => a.toLowerCase().replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+/** Exact rupees and paise, for prices, tax and receipts. */
+export const inrExact = (paise: number) => `₹${(paise / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

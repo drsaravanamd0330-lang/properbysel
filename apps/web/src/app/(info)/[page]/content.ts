@@ -7,11 +7,6 @@ export const PAGES: Record<string, Page> = {
     "ProperBySel is a product of AAROVIN SOFTWARE SOLUTIONS.",
   ] },
   contact: { title: "Contact us", body: ["Support email and phone will be published before launch.", "For complaints about a listing, use the “Report listing” button on the property page, or see Grievance redressal."] },
-  pricing: { title: "Pricing", body: [
-    "Posting your first listing is free.",
-    "Paid options such as featured placement and advertiser plans are being finalised. Prices will be shown here, including GST, before you pay anything.",
-    "Paid features never change how we moderate listings.",
-  ] },
   help: { title: "Help centre", body: [
     "How do I post a property? Tap “Post Property”, log in with your mobile number, and complete the eight steps. Your progress saves automatically.",
     "How long does review take? We aim to review new listings within one working day. You will get a notification when your listing is live or if changes are needed.",

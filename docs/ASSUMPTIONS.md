@@ -18,3 +18,4 @@ Recorded 2026-11-26. Each item is a default chosen so work can continue; change 
 | A12 | Listings expire 90 days after publishing unless renewed. | Common marketplace practice; keeps stale inventory out of search. | `LISTING_TTL_DAYS` in domain config. |
 | A13 | All demo data is synthetic and labelled "Demo". No competitor content is used. | Brief. | — |
 | A14 | Deliverable location is pending the owner's choice (GitHub repo, Windows folder, or project files). | Asked 2026-11-26. | — |
+| A15 | Launch prices (exclusive of 18% GST): Featured 7 days ₹299, Featured 30 days ₹999, Agent Pro monthly ₹1,499 (20 listings), photoshoot ₹1,999 (hidden behind the `manual_photoshoot` flag). | Placeholder for the Chennai pilot; no market research done. | `apps/api/src/lib/plans.ts`, Plan table. |

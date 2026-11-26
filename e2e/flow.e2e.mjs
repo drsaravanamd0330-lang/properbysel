@@ -125,6 +125,27 @@ try {
   await owner.click("button:has-text('Send')");
   await owner.waitForSelector("text=When would you like to visit?");
   step("enquiry reached the advertiser inbox and the advertiser replied");
+
+  await owner.goto(`${WEB}/dashboard`);
+  await owner.click(`tr:has-text("${title}") >> a:has-text("Feature")`);
+  await owner.waitForSelector("text=Featured listing, 7 days");
+  await owner.check("input[value=FEATURED_7D]");
+  await owner.screenshot({ path: `${SHOTS}/07-feature-plan.png`, fullPage: true });
+  await owner.click("button:has-text('Continue to payment')");
+  await owner.waitForSelector("text=SANDBOX CHECKOUT");
+  await owner.screenshot({ path: `${SHOTS}/08-sandbox-checkout.png` });
+  await owner.click("button:has-text('Simulate successful payment')");
+  await owner.waitForURL(/dashboard\/orders\/\w+/);
+  await owner.waitForSelector("text=Payment confirmed");
+  await owner.screenshot({ path: `${SHOTS}/09-order-paid.png`, fullPage: true });
+  step("owner paid for a featured placement in the sandbox and the order shows as confirmed");
+  await buyer.goto(`${WEB}/search?city=chennai&transaction=RENT`);
+  const top3 = await buyer.locator("a.lcard").evaluateAll((els) => els.slice(0, 3).map((e) => e.textContent ?? ""));
+  const mine = top3.find((t) => t.includes(title));
+  if (!mine) throw new Error("Featured listing is not in the top three sponsored slots");
+  if (!/sponsored/i.test(mine)) throw new Error("Featured listing is not labelled Sponsored");
+  await buyer.screenshot({ path: `${SHOTS}/10-search-sponsored-mobile.png` });
+  step("featured listing shows in the sponsored slots at the top of search, labelled Sponsored");
   console.log("\nE2E FLOW PASSED");
 } catch (e) {
   console.error("E2E FAILED:", e.message);

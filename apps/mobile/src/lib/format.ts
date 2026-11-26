@@ -13,3 +13,4 @@ export const statusLabel = (s: string) => s.toLowerCase().replace(/_/g, " ").rep
 export const areaLabel = (l: Pick<PublicListing, "areaValue" | "areaUnit">) => (l.areaValue && l.areaUnit ? `${l.areaValue.toLocaleString("en-IN")} ${AREA_UNIT_LABEL[l.areaUnit as AreaUnit]}` : null);
 export const fmtDateTime = (d: string) => new Date(d).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 export { formatINR };
+export const inrExact = (paise: number) => `₹${(paise / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

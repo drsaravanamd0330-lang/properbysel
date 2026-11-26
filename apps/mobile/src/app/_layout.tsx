@@ -14,6 +14,8 @@ export default function RootLayout() {
           <Stack.Screen name="property/[id]" options={{ title: "Property" }} />
           <Stack.Screen name="listing/[id]" options={{ title: "Your listing" }} />
           <Stack.Screen name="conversation/[id]" options={{ title: "Conversation" }} />
+          <Stack.Screen name="feature/[id]" options={{ title: "Feature listing" }} />
+          <Stack.Screen name="order/[id]" options={{ title: "Order" }} />
           <Stack.Screen name="login" options={{ title: "Log in", presentation: "modal" }} />
         </Stack>
       </AuthProvider>

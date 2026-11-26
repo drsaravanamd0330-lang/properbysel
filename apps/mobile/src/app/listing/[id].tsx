@@ -86,6 +86,7 @@ export default function ListingEditor() {
       </ScrollView>
       <ScrollView contentContainerStyle={s.pad} keyboardShouldPersistTaps="handled">
         {l.status !== "DRAFT" && <Text style={[s.muted, { marginBottom: 8 }]}>Status: {statusLabel(l.status)}{l.lastReview?.note ? `. Moderator note: ${l.lastReview.note}` : ""}</Text>}
+        {l.status === "PUBLISHED" && <Button title={l.isSponsored ? "Extend featured placement" : "Feature this listing"} variant="navy" onPress={() => router.push(`/feature/${l.id}`)} style={{ marginBottom: 12 }} />}
         <Text style={s.h1}>{STEPS[step - 1]}</Text>
         {step === 1 && <>
           <Text style={s.label}>I am the</Text><View style={[s.row, { marginBottom: 12 }]}>{ADVERTISER_TYPES.map((a) => <Chip key={a} label={ADVERTISER_LABEL[a]} selected={d.advertiserType === a} onPress={() => update({ advertiserType: a })} />)}</View>

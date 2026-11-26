@@ -15,6 +15,13 @@ const envSchema = z.object({
   OTP_PROVIDER: z.enum(["dev", "msg91", "twilio"]).default("dev"),
   STORAGE_PROVIDER: z.enum(["local", "s3"]).default("local"),
   LOCAL_STORAGE_DIR: z.string().default("./storage"),
+  PAYMENT_PROVIDER: z.enum(["sandbox", "razorpay"]).default("sandbox"),
+  RAZORPAY_KEY_ID: z.string().optional(),
+  RAZORPAY_KEY_SECRET: z.string().optional(),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
+  BUSINESS_LEGAL_NAME: z.string().default("AAROVIN SOFTWARE SOLUTIONS"),
+  BUSINESS_GSTIN: z.string().optional(),
+  BUSINESS_ADDRESS: z.string().optional(),
 });
 export type Config = z.infer<typeof envSchema>;
 
@@ -26,6 +33,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (c.APP_ENV === "production") {
     if (c.OTP_PROVIDER === "dev") throw new UnsafeConfigError("OTP_PROVIDER=dev is not allowed when APP_ENV=production");
     if (c.JWT_SECRET.length < 32 || /dev|change-me/i.test(c.JWT_SECRET)) throw new UnsafeConfigError("JWT_SECRET is too weak for production");
+    if (c.PAYMENT_PROVIDER === "sandbox") throw new UnsafeConfigError("PAYMENT_PROVIDER=sandbox is not allowed when APP_ENV=production");
     if (c.STORAGE_PROVIDER === "local") throw new UnsafeConfigError("STORAGE_PROVIDER=local is not allowed when APP_ENV=production");
   }
   return c;

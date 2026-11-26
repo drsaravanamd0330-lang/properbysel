@@ -12,9 +12,9 @@ Status key: ✅ tested automatically · 🟡 implemented, not yet tested · ⬜ 
 | 6 | Search filters, sorting and pagination return correct results | ✅ | flow.test.ts #6 |
 | 7 | An enquiry reaches the correct advertiser | ✅ | flow.test.ts #7, e2e |
 | 8 | Visit state changes follow permission and lifecycle rules | ✅ | flow.test.ts #8 |
-| 9 | Duplicate payment webhooks do not grant duplicate benefits | ⬜ | |
-| 10 | Failed payments do not activate entitlements | ⬜ | |
-| 11 | Expired paid placements stop receiving paid treatment | ⬜ | |
+| 9 | Duplicate payment webhooks do not grant duplicate benefits | ✅ | payments.test.ts #9 (same event ×3 concurrently, plus a second distinct capture; amount mismatch refused) |
+| 10 | Failed payments do not activate entitlements | ✅ | payments.test.ts #10 (sandbox checkout failure, no entitlement, no receipt; retry then succeeds), e2e purchase |
+| 11 | Expired paid placements stop receiving paid treatment | ✅ | payments.test.ts #11; refunds revoke placement (payments.test.ts refunds) |
 | 12 | Closing a listing updates its visibility and enquiry behaviour | ✅ | flow.test.ts #12 |
 | 13 | Production settings reject development authentication bypasses | ✅ | flow.test.ts auth #13 |
 | 14 | Mobile and web use the same persisted data | ✅ | e2e/mobile.e2e.mjs (mobile web build at phone size; native builds not yet run) |

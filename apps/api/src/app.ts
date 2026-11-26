@@ -17,8 +17,10 @@ import { moderationRoutes } from "./routes/moderation";
 import { publicRoutes } from "./routes/public";
 import { enquiryRoutes } from "./routes/enquiries";
 import { mediaRoutes } from "./routes/media";
+import { paymentRoutes } from "./routes/payments";
+import { createPaymentProvider, type PaymentProvider } from "./lib/payments";
 
-export interface BuildOptions { cfg?: Config; db: PrismaClient; otp?: OtpSender; storage?: Storage; logger?: boolean }
+export interface BuildOptions { cfg?: Config; db: PrismaClient; otp?: OtpSender; storage?: Storage; payments?: PaymentProvider; logger?: boolean }
 
 export async function buildApp(opts: BuildOptions): Promise<{ app: FastifyInstance; ctx: AppContext }> {
   const cfg = opts.cfg ?? loadConfig();
@@ -32,6 +34,7 @@ export async function buildApp(opts: BuildOptions): Promise<{ app: FastifyInstan
     tokens: new TokenService(cfg.JWT_SECRET, cfg.ACCESS_TOKEN_TTL_MIN),
     otp: opts.otp ?? createOtpSender(cfg, (m) => app.log.warn(m)),
     storage: opts.storage ?? createStorage(cfg),
+    payments: opts.payments ?? createPaymentProvider(cfg),
   };
 
   await app.register(helmet, { crossOriginResourcePolicy: { policy: "cross-origin" } });
@@ -57,7 +60,7 @@ export async function buildApp(opts: BuildOptions): Promise<{ app: FastifyInstan
     return reply.code(500).send({ error: { code: "INTERNAL", message: "Something went wrong. Please try again." } });
   });
 
-  app.get("/health", async () => ({ ok: true, env: cfg.APP_ENV, otp: ctx.otp.name, storage: cfg.STORAGE_PROVIDER }));
+  app.get("/health", async () => ({ ok: true, env: cfg.APP_ENV, otp: ctx.otp.name, storage: cfg.STORAGE_PROVIDER, payments: ctx.payments.name }));
 
   await authRoutes(app, ctx);
   await listingRoutes(app, ctx);
@@ -65,5 +68,6 @@ export async function buildApp(opts: BuildOptions): Promise<{ app: FastifyInstan
   await publicRoutes(app, ctx);
   await enquiryRoutes(app, ctx);
   await mediaRoutes(app, ctx);
+  await paymentRoutes(app, ctx);
   return { app, ctx };
 }

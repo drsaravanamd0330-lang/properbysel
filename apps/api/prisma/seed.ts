@@ -3,6 +3,7 @@ import sharp from "sharp";
 import { slugify, CATEGORY_GROUP, toSqft, LISTING_TTL_DAYS, type PropertyCategory, type AreaUnit } from "@pbs/domain";
 import { CITIES, LISTINGS } from "./seed-data";
 import { LocalStorage } from "../src/lib/storage";
+import { LAUNCH_PLANS } from "../src/lib/plans";
 
 const db = new PrismaClient();
 if (process.env.APP_ENV === "production") { console.error("Refusing to seed demo data in production."); process.exit(1); }
@@ -20,6 +21,9 @@ async function demoPhoto(label: string, i: number): Promise<Buffer> {
 }
 
 async function main() {
+  for (const p of LAUNCH_PLANS) {
+    await db.plan.upsert({ where: { code: p.code }, create: { ...p }, update: {} });
+  }
   for (const c of CITIES) {
     const city = await db.city.upsert({ where: { slug: c.slug }, create: { name: c.name, slug: c.slug, state: c.state, lat: c.lat, lng: c.lng }, update: {} });
     for (const [name, pin, lat, lng] of c.localities) {
